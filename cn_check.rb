@@ -18,7 +18,7 @@ Plugin.create(:cn_check) do
       timestamp = ("[%{time}]" % {time: Time.new.strftime("%Y/%m/%d %H:%M")}).freeze
       report = @rheniums.sort_by(&:sn).inject(timestamp.dup) do |tweet, rhenium|
         token = "\n〄%{sn}: %{alive}" % {sn: rhenium.sn,
-                                         alive: rhenium.stat ? "凍結(#{rhenium.stat})" : "生存"}
+                                         alive: rhenium.stat ? "凍結(#{stat_convert(rhenium.stat)})" : "生存"}
         if (tweet.size + token.size) >= 140
           Service.primary.post(message: tweet)
           timestamp + token
@@ -29,8 +29,19 @@ Plugin.create(:cn_check) do
     end
   end
 
+  def stat_convert(stat)
+    case stat
+    when MikuTwitter::Error
+      stat_convert(stat.httpresponse)
+    when Net::HTTPResponse
+      "#{stat.code} #{stat.message}"
+    when Exception
+      "#{stat.class} #{stat.message}"
+    else
+      stat.class.to_s end end
+
   on_rheniumed do |rhenium|
-    Service.primary.post message: "〄%{sn}: 凍結(%{stat})" % rhenium.to_h
+    Service.primary.post message: "〄%{sn}: 凍結(%{stat})" % {stat: stat_convert(rhenium.stat), sn: rhenium.sn}
   end
 
   on_unrheniumed do |rhenium|
