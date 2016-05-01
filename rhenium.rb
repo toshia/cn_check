@@ -37,10 +37,13 @@ module Plugin::CnCheck
       self.stat = false
       period end
 
-    
+    def compare(a, b)
+      a = a.code if a.respond_to?(:code)
+      b = b.code if b.respond_to?(:code)
+      a == b end
 
     def period
-      Reserver.new(60 * (self.stat ? [2, self.error_count].min : 5)) do
+      Reserver.new(60 * (self.stat ? [15, self.error_count].min : 15)) do
         (Service.primary/:users/:show).json(screen_name: self.sn).next{
           self.unrheniumed!
         }.trap do |err|
