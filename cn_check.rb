@@ -20,11 +20,11 @@ Plugin.create(:cn_check) do
         token = "\n〄%{sn}: %{alive}" % {sn: rhenium.sn,
                                          alive: rhenium.stat ? "凍結(#{stat_convert(rhenium.stat)})" : "生存"}
         if (tweet.size + token.size) >= 140
-          Service.primary.post(message: tweet)
+          Plugin.call(:cn_check_report, tweet)
           timestamp + token
         else
           tweet + token end end
-      Service.primary.post(message: report)
+      Plugin.call(:cn_check_report, report)
       period
     end
   end
@@ -41,11 +41,15 @@ Plugin.create(:cn_check) do
       stat.class.to_s end end
 
   on_rheniumed do |rhenium|
-    Service.primary.post message: "〄%{sn}: 凍結(%{stat})" % {stat: stat_convert(rhenium.stat), sn: rhenium.sn}
+    Plugin.call :cn_check_report, "〄%{sn}: 凍結(%{stat})" % {stat: stat_convert(rhenium.stat), sn: rhenium.sn}
   end
 
   on_unrheniumed do |rhenium|
-    Service.primary.post message: "〄%{sn}: 凍結解除!" % rhenium.to_h
+    Plugin.call :cn_check_report, "〄%{sn}: 凍結解除!" % rhenium.to_h
+  end
+
+  on_cn_check_report do |report|
+    Service.primary.post(message: report)
   end
 
   period
