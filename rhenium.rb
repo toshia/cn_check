@@ -15,10 +15,16 @@ module Plugin::CnCheck
     # ==== Return
     # self
     def rheniumed!(new_stat)
-      self.error_count += 1
-      if self.error_count == 3 or (self.error_count > 3 and self.stat != new_stat)
-        Plugin.call(:rheniumed, self) end
-      self.stat = new_stat
+      case new_stat
+      when new_stat.is_a?(MikuTwitter::RateLimitError)
+      # Rate limit exceed. Ignore.
+      when new_stat.httpresponse.code[0] == '5'
+      # Flying whale. Ignore.
+      else
+        self.error_count += 1
+        if self.error_count == 3 or (self.error_count > 3 and self.stat != new_stat)
+          Plugin.call(:rheniumed, self) end
+        self.stat = new_stat end
       period end
 
     # 残念ながら、レニウムされていない時に呼ぶ
@@ -32,7 +38,7 @@ module Plugin::CnCheck
       period end
 
     def period
-      Reserver.new(60 * (self.stat ? [15, self.error_count].min : 15)) do
+      Reserver.new(60 * (self.stat ? [5, self.error_count].min : 5)) do
         (Service.primary/:users/:show).json(screen_name: self.sn).next{
           self.unrheniumed!
         }.trap do |err|
