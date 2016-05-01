@@ -18,11 +18,11 @@ module Plugin::CnCheck
       case new_stat
       when new_stat.is_a?(MikuTwitter::RateLimitError)
       # Rate limit exceed. Ignore.
-      when new_stat.httpresponse.code[0] == '5'
+      when new_stat.is_a?(MikuTwitter::Error) && new_stat.httpresponse.code[0] == '5'
       # Flying whale. Ignore.
       else
         self.error_count += 1
-        if self.error_count == 3 or (self.error_count > 3 and self.stat != new_stat)
+        if self.error_count == 3 or (self.error_count > 3 and !compare(self.stat, new_stat))
           Plugin.call(:rheniumed, self) end
         self.stat = new_stat end
       period end
@@ -37,8 +37,10 @@ module Plugin::CnCheck
       self.stat = false
       period end
 
+    
+
     def period
-      Reserver.new(60 * (self.stat ? [5, self.error_count].min : 5)) do
+      Reserver.new(60 * (self.stat ? [2, self.error_count].min : 5)) do
         (Service.primary/:users/:show).json(screen_name: self.sn).next{
           self.unrheniumed!
         }.trap do |err|
