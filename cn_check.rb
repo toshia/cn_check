@@ -21,7 +21,7 @@ Plugin.create(:cn_check) do
   @rheniums = Set.new() # Set of Plugin::CnCheck::Rhenium
 
   %w[cn rhe__ se4k cn_court_ cn_scaffold_ cat cn_check_check aclog_bot aclog_service re4k].each do |sn|
-    @rheniums << Plugin::CnCheck::Rhenium.new(sn, false, 15).period
+    @rheniums << Plugin::CnCheck::Rhenium.new(sn, nil, 15).period
   end
 
   def period

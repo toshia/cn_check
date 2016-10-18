@@ -15,16 +15,22 @@ module Plugin::CnCheck
     # ==== Return
     # self
     def rheniumed!(new_stat)
-      case new_stat
+      case
       when new_stat.is_a?(MikuTwitter::RateLimitError)
       # Rate limit exceed. Ignore.
       when new_stat.is_a?(MikuTwitter::Error) && new_stat.httpresponse.code[0] == '5'
       # Flying whale. Ignore.
       else
         self.error_count += 1
-        if self.error_count == 3 or (self.error_count > 3 and !compare(self.stat, new_stat))
-          Plugin.call(:rheniumed, self) end
-        self.stat = new_stat end end
+        if !self.first_time?
+          if self.error_count == 3 or (self.error_count > 3 and !compare(self.stat, new_stat))
+            Plugin.call(:rheniumed, self) end end
+        self.stat = new_stat
+      end end
+
+    def first_time?
+      self.stat.nil?
+    end
 
     # 残念ながら、レニウムされていない時に呼ぶ
     # ==== Return
