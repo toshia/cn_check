@@ -24,8 +24,7 @@ module Plugin::CnCheck
         self.error_count += 1
         if self.error_count == 3 or (self.error_count > 3 and !compare(self.stat, new_stat))
           Plugin.call(:rheniumed, self) end
-        self.stat = new_stat end
-      period end
+        self.stat = new_stat end end
 
     # 残念ながら、レニウムされていない時に呼ぶ
     # ==== Return
@@ -34,8 +33,7 @@ module Plugin::CnCheck
       self.error_count = 0
       if self.stat
         Plugin.call(:unrheniumed, self) end
-      self.stat = false
-      period end
+      self.stat = false end
 
     def compare(a, b)
       a = a.code if a.respond_to?(:code)
@@ -46,8 +44,11 @@ module Plugin::CnCheck
       Reserver.new(60 * (self.stat ? [15, self.error_count].min : 15)) do
         (Service.primary/:users/:show).json(screen_name: self.sn).next{
           self.unrheniumed!
-        }.trap do |err|
-          self.rheniumed! err end end
+        }.trap { |err|
+          self.rheniumed! err
+        }.trap{ |err|
+          error err
+        }.next{ period } end
       self end
   end
 end
